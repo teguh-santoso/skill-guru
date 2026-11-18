@@ -73,23 +73,63 @@ soal_list = [
 create_soal_docx('soal.docx', soal_list)
 ```
 
-## 2. DOCX Manager
+## 2. Alur Output (Penting)
+
+Saat pengguna meminta pembuatan soal pilihan ganda, assistant **harus** menghasilkan file `.docx` secara otomatis, bukan hanya teks dalam chat. Alur yang dianjurkan:
+
+### 2.1 Default: buat file `.docx` otomatis
+
+Setiap kali pengguna meminta soal (misal: "buatkan 5 soal tentang sistem pencernaan"), assistant harus:
+
+1. Susun `soal_list` (list of dict) sesuai format di bagian 1.
+2. Panggil `create_soal_docx('nama_file.docx', soal_list)` menggunakan `skill_guru.py`.
+3. Kirimkan file `.docx` hasil generate kepada pengguna sebagai attachment.
+4. Sertakan ringkasan singkat isi soal dalam chat (opsional).
+
+### 2.2 Alternatif: tanya format output
+
+Jika tidak yakin apakah pengguna ingin file `.docx` atau hanya teks dalam chat, assistant boleh menanyakan terlebih dahulu:
+
+> "Apakah Anda ingin soal dalam format file `.docx` (dapat diunduh) atau hanya teks dalam chat?"
+
+Tunggu balasan pengguna sebelum melanjutkan.
+
+### 2.3 Contoh pemanggilan otomatis
+
+```python
+from skill_guru import create_soal_docx
+
+soal_list = [
+    {
+        'nomor': 1,
+        'pertanyaan': 'Ibukota negara Indonesia adalah',
+        'opsi': ['Bandung', 'Surabaya', 'Jakarta', 'Medan', 'Yogyakarta'],
+        'jawaban': 'C',
+    },
+    # ... tambahkan soal lain
+]
+
+create_soal_docx('soal_sistem_pencernaan.docx', soal_list)
+# File siap dikirim sebagai attachment ke pengguna
+```
+
+## 3. DOCX Manager
 
 Semua fungsi tersedia di `skill_guru.py` dan dapat dipanggil langsung dari Python.
 
-### 2.1 Baca DOCX
+### 3.1 Baca DOCX
 
 `read_docx(filepath)` — cetak seluruh teks paragraf dari file DOCX.
 
-### 2.2 Buat DOCX sederhana
+### 3.2 Buat DOCX sederhana
 
 `create_docx(filepath, text)` — buat file DOCX baru dari teks (baris dipisahkan dengan `\n`).
 
-### 2.3 Tambah konten ke DOCX
+### 3.3 Tambah konten ke DOCX
 
 `add_to_docx(filepath, text)` — tambahkan paragraf ke file DOCX yang sudah ada.
 
-### 2.4 Buat DOCX dengan format
+### 3.4 Buat DOCX dengan format
 
 `create_formatted_docx(filepath, content_json)` — buat dokumen dari JSON dengan kontrol format granular (bold, italic, underline, style).
 
@@ -106,11 +146,11 @@ Format `content_json`:
 }
 ```
 
-### 2.5 Buat Tabel
+### 3.5 Buat Tabel
 
 `create_table(filepath, rows, cols, data=None, caption=None)` — buat tabel grid dengan header berwarna biru tua dan teks putih tebal.
 
-### 2.6 Templating (Placeholder Replacement)
+### 3.6 Templating (Placeholder Replacement)
 
 `create_template(filepath, template_text, replacements)` — buat dokumen dari template dengan mengganti placeholder `{key}`.
 
@@ -120,15 +160,15 @@ Contoh:
 create_template('surat.docx', 'Halo {nama}, acara pada {tanggal}.', {'nama': 'Andi', 'tanggal': 'Besok'})
 ```
 
-### 2.7 Insert Formula (Rumus)
+### 3.7 Insert Formula (Rumus)
 
 `insert_formula(filepath, formula, position='end')` — sisipkan rumus matematika ke dalam DOCX (menggunakan OMML/EQ field code).
 
-### 2.8 Insert Gambar
+### 3.8 Insert Gambar
 
 `insert_image(filepath, image_path, width=None, position='end')` — sisipkan gambar ke dalam dokumen yang sudah ada.
 
-### 2.9 Dokumen Lengkap (Comprehensive)
+### 3.9 Dokumen Lengkap (Comprehensive)
 
 `create_comprehensive_docx(output_path)` — contoh dokumen lengkap dengan judul, paragraf Lorem Ipsum, tabel data, rumus, dan gambar.
 
