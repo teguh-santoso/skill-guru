@@ -17,7 +17,7 @@ pip install -r requirements.txt
 ## Penggunaan
 
 ```python
-from skill_guru import create_soal_docx, read_docx, create_docx, create_table, insert_image, insert_formula, create_template
+from skill_guru import create_soal_docx, wawancara_guru, read_docx, create_docx, create_table, insert_image, insert_formula, create_template
 ```
 
 Lihat `SKILL.md` untuk dokumentasi lengkap dan contoh penggunaan.
