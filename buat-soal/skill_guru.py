@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-Buat Soal — Skill Guru & Manajemen DOCX (all-in-one)
+Skill Guru — Buat Soal & Manajemen DOCX (all-in-one)
 
 Modul ini menggabungkan:
 1. create_soal_docx  — buat dokumen .docx berisi soal pilihan ganda (layout disesuaikan)
 2. DOCX Manager      — baca, buat, dan manipulasi file DOCX (templating, tabel, formula, gambar)
 3. create_comprehensive_docx — contoh dokumen lengkap (paragraf, tabel, formula, gambar)
+4. Wawancara Guru    — interaktif menanyakan kelas, materi, jenis soal, jumlah soal
 
 Semua fungsi hanya bergantung pada python-docx.
 Didesain untuk diekspor ke Gemini (atau LLM lain) dengan satu prompt.
@@ -96,9 +97,12 @@ def create_soal_docx(output_path, soal_list):
         - nomor: int
         - pertanyaan: str
         - statements: list of str (opsional) — banyak pernyataan, akan diformat
-          dengan nomor ")" (contoh: "1) teks pernyataan")
+          dengan nomner ")" (contoh: "1) teks pernyataan")
         - opsi: list of 5 str [A, B, C, D, E]
         - jawaban: str (A/B/C/D/E)
+        - tipe: str (opsional) — 'pilihan_ganda_sederhana' (default), 'pilihan_ganda_komplek',
+          'pilihan_ganda_mcma', 'soal_pendek', 'banyak_pernyataan', 'soal_bergambar'
+        - gambar: str (opsional) — path file gambar untuk soal_bergambar
     """
     doc = Document()
 
@@ -119,7 +123,7 @@ def create_soal_docx(output_path, soal_list):
         # Bangun teks soal
         soal_teks = f"{s['nomor']}. {s['pertanyaan']}"
 
-        # Tambahkan statements jika ada (dengan nomor ")")
+        # Tambahkan statements jika ada (dengan nomner ")")
         statements = s.get('statements')
         if statements:
             for idx, stmt in enumerate(statements, start=1):
@@ -129,13 +133,15 @@ def create_soal_docx(output_path, soal_list):
         run_soal = p_soal.add_run(soal_teks)
         set_run_format(run_soal, bold=False)
 
-        # Opsi A-E (tidak tebal)
-        huruf_list = ['A', 'B', 'C', 'D', 'E']
-        for huruf, opsi_teks in zip(huruf_list, s['opsi']):
-            p_opsi = doc.add_paragraph(f'{huruf}. {opsi_teks}')
-            set_paragraph_format(p_opsi)
-            run_opsi = p_opsi.runs[0]
-            set_run_format(run_opsi, bold=False)
+        # Opsi A-E (tidak tebal) — hanya untuk tipe pilihan ganda
+        tipe = s.get('tipe', 'pilihan_ganda_sederhana')
+        if tipe in ('pilihan_ganda_sederhana', 'pilihan_ganda_komplek', 'pilihan_ganda_mcma'):
+            huruf_list = ['A', 'B', 'C', 'D', 'E']
+            for huruf, opsi_teks in zip(huruf_list, s['opsi']):
+                p_opsi = doc.add_paragraph(f'{huruf}. {opsi_teks}')
+                set_paragraph_format(p_opsi)
+                run_opsi = p_opsi.runs[0]
+                set_run_format(run_opsi, bold=False)
 
         # Kunci jawaban (tidak tebal)
         p_ans = doc.add_paragraph()
@@ -150,6 +156,67 @@ def create_soal_docx(output_path, soal_list):
     ensure_dir(output_path)
     doc.save(output_path)
     print(f'Dokumen soal berhasil dibuat: {output_path}')
+
+
+def wawancara_guru():
+    """
+    Interaktif menanyakan informasi dari guru untuk menyiapkan pembuatan soal.
+
+    Mengembalikan dict dengan kunci:
+        - kelas: str
+        - materi: str
+        - tujuan_pembelajaran: list of str
+        - jenis_soal: str
+        - jumlah_pendek: int
+        - jumlah_stimulus: int
+        - jumlah_banyak_pernyataan: int
+        - jumlah_gambar: int
+    """
+    print('=== Wawancara Guru — Persiapan Pembuatan Soal ===')
+
+    kelas = input('Kelas / Jenjang (contoh: Kelas 7 SMP): ').strip()
+    materi = input('Materi atau tujuan pembelajaran: ').strip()
+
+    print('\nTujuan pembelajaran:')
+    print('  1. Saya (AI) akan mencari default berdasarkan materi')
+    print('  2. Saya akan menuliskan sendiri')
+    pilihan_tujuan = input('Pilih (1/2): ').strip()
+
+    if pilihan_tujuan == '2':
+        tujuan_input = input('Tuliskan semua tujuan pembelajaran (pisahkan dengan titik koma ;): ').strip()
+        tujuan_pembelajaran = [t.strip() for t in tujuan_input.split(';') if t.strip()]
+    else:
+        tujuan_pembelajaran = ['(dicari oleh AI berdasarkan materi)']
+
+    print('\nJenis soal:')
+    print('  1. Pilihan ganda sederhana (default, 5 opsi)')
+    print('  2. Pilihan ganda komplek')
+    print('  3. Pilihan ganda MCMA (multiple correct answers)')
+    pilihan_jenis = input('Pilih (1/2/3): ').strip()
+
+    jenis_map = {
+        '1': 'pilihan_ganda_sederhana',
+        '2': 'pilihan_ganda_komplek',
+        '3': 'pilihan_ganda_mcma',
+    }
+    jenis_soal = jenis_map.get(pilihan_jenis, 'pilihan_ganda_sederhana')
+
+    print('\nJumlah soal (default: 50 pendek, 20 stimulus, 20 banyak pernyataan, 10 gambar):')
+    jumlah_pendek = input('Soal pendek [50]: ').strip() or '50'
+    jumlah_stimulus = input('Soal berstimulus [20]: ').strip() or '20'
+    jumlah_banyak_pernyataan = input('Banyak pernyataan [20]: ').strip() or '20'
+    jumlah_gambar = input('Soal bergambar/grafik [10]: ').strip() or '10'
+
+    return {
+        'kelas': kelas,
+        'materi': materi,
+        'tujuan_pembelajaran': tujuan_pembelajaran,
+        'jenis_soal': jenis_soal,
+        'jumlah_pendek': int(jumlah_pendek),
+        'jumlah_stimulus': int(jumlah_stimulus),
+        'jumlah_banyak_pernyataan': int(jumlah_banyak_pernyataan),
+        'jumlah_gambar': int(jumlah_gambar),
+    }
 
 
 # ===========================================================================
